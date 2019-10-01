@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<metra charset="UTF-8">
+		<title>Video Upright Adjustment and Stabilization</title>
+<style>
+	body {
+		font-family: Times New Roman;
+		font-size: 16pt;
+		margin-left: auto;
+		margin-right: auto;
+		text-align: left;
+		max-width: 1350px;
+	}
+
+	h1 {
+		font-family: Times New Roman;
+	}
+
+	h2 {
+		font-family: Times New Roman;
+	}
+
+	p {
+		font-family: Times New Roman;
+		font-size: 16pt;
+		text-align: justify;
+	}
+
+	table, td {
+		border: 1px solid black;
+	}
+
+	div.section {
+		margin-bottom: 100px;
+		border-top: 1px solid #000000;
+	}
+
+	div.video {
+		text-align: center;
+	}
+</style>
+
+	<script>
+		function changeVideo(videoName, path) {
+			var video = document.getElementById(videoName);
+			var source = video.getElementsByTagName('source')[0];
+			source.setAttribute('src',path);
+			video.load();
+		}
+
+		var sec_no = 1;
+		function secNo() {
+			document.write(sec_no+'. ');
+			sec_no++;
+		}
+
+		var figures = new Map();
+
+		var fig_idx = 1;
+
+		function addFig(key) {
+			if(figures.get(key) == undefined) {
+				figures.set(key, fig_idx);
+				document.write('Figure '+fig_idx+'. ');
+				fig_idx++;
+			}
+			else {
+				document.write('Figure '+figures.get(key)+'. ');
+			}
+		}
+
+		function fig(key) {
+			idx = figures.get(key);
+			if(idx == undefined) {
+				figures.set(key, fig_idx);
+				document.write('Fig. '+fig_idx);
+				fig_idx++;
+			}
+			else {
+				document.write('Fig. '+idx);
+			}
+		}
+
+		var tables = new Map();
+
+		var tab_idx = 1;
+
+		function addTab(key) {
+			if(tables.get(key) == undefined) {
+				tables.set(key, tab_idx);
+				document.write('Table '+tab_idx+'. ');
+				tab_idx++;
+			}
+			else {
+				document.write('Table '+tables.get(key)+'. ');
+			}
+		}
+
+		function tab(key) {
+			idx = tables.get(key);
+			if(idx == undefined) {
+				tables.set(key, tab_idx);
+				document.write('Table '+tab_idx);
+				tab_idx++;
+			}
+			else {
+				document.write('Table '+idx);
+			}
+		}
+
+		var references = new Map();
+
+		var ref_idx = 1;
+		function addRef(key, value) {
+			references.set(key, [0, value]);
+		}
+
+		function cite(key) {
+			value = references.get(key);
+			idx = value[0];
+			if(idx == 0) {
+				idx = ref_idx;
+				references.set(key, [idx, value[1]]);
+				ref_idx++;
+			}
+			document.write('['+idx+']');
+		}
+
+		function listRef() {
+			refarray = Array.from(references.values());
+			refarray.sort(function(a,b) { return a[0] - b[0]; });
+
+			document.write("<div class='section'> <H2>References</H2> <ol>");
+			refarray.forEach(function(item, index, array) {
+				if(item[0] > 0) {
+					document.write('<li>'+item[1]+'</li>');
+				}
+			});
+			document.write('</ol></div>');
+		}
+
+		addRef('imagenet', 'O. Russakovsky, J. Deng, H. Su, J. Krause, S. Satheesh, S. Ma, Z. Huang, A. Karpathy, A. Khosla, M. Bernstein, A. C. Berg, and L. Fei-Fei. ImageNet Large Scale Visual Recognition Challenge. <i>International Journal of Computer Vision (IJCV)</i>, 115(3):211-252, 2015');
+		addRef('objectdetection', 'X. Zhu, Y. Wang, J. Dai, L. Yuan, and Y. Wei. Flow-guided feature aggregation for video object detection, In <i>Proc. IEEE International Conference on Computer Vision (ICCV)</i>, 2017.');
+		addRef('bundled','S. Liu, L. Yuan, P. Tan, and J. Sun. Bundled camera paths for video stabilization, <i>ACM Transactions on Graphics (TOG)</i>, 32(4):78, 2013.');
+		addRef('adam','D. P. Kingma and J. Ba. Adam: A method for stochastic optimization, <i>arXiv preprint arXiv:1412.6980</i>, 2014');
+		addRef('worldcities', 'G. Tolias and Y. Avrithis. Speeded-up, relaxed spatial matching. In </i>Proc. IEEE International Conference on Computer Vision (ICCV)</i>, Barcelona, Spain, November 2011.');
+	</script>
+
+	</head>
+	<body>
+		<H1 align="center">Video Upright Adjustment and Stabilization</H1>
+		<p style="text-align:center">
+			<table style='margin-left: auto; margin-right:auto; text-align:center; border:0pt'>
+				<tr>
+					<td style='border:0pt; padding-right:15pt;'>
+						Jucheol Won<br>
+						wjc0319@dgist.ac.kr<br>
+						DGIST
+					</td>
+					<td style='border:0pt; padding-left:15pt;'>
+						Sunghyun Cho<br>
+						s.cho@postech.ac.kr<br>
+						POSTECH
+					</td>
+				</tr>
+			</table>
+		</p>
+
+		<div class='section'>
+				<H2><script>secNo()</script>Video Upright Adjustment Examples</H2>
+			<p>
+			We first show additional examples of video upright adjustment that are not included in the paper.
+			The input video clips were downloaded from Youtube.
+			You may switch to a different example by clicking the buttons below.
+			</p>
+			<div class='video'>
+				<button onclick="changeVideo('upright_example','video/upright_example1.mp4')">Example 1</button>
+				<button onclick="changeVideo('upright_example','video/upright_example2.mp4')">Example 2</button>
+				<br><br>
+				<video id="upright_example" width="1280" height="720" controls>
+					<source src="video/upright_example1.mp4" type="video/mp4">
+						<a href="video/upright_example1.mp4">Example 1</a>
+						<a href="video/upright_example2.mp4">Example 2</a>
+				</video>
+			</div>
+		</div>
+		
+		<div class='section'>
+			<H2><script>secNo()</script> Joint Upright Adjustment and Stabilization Examples</H2>
+			<p>
+			We show additional examples of joint video upright adjustment and stabilization that are not included in the paper.
+			You may switch to a different example by clicking the buttons below.
+			</p>
+			<div class='video'>
+				<button onclick="changeVideo('joint_approach_example','video/example1.mp4')">Example 1</button>
+				<button onclick="changeVideo('joint_approach_example','video/example2.mp4')">Example 2</button>
+				<button onclick="changeVideo('joint_approach_example','video/example3.mp4')">Example 3</button>
+				<br><br>
+				<video id="joint_approach_example" width="1280" height="720" controls>
+					<source src="video/example1.mp4" type="video/mp4">
+						<a href="video/example1.mp4">Example 1</a>
+						<a href="video/example2.mp4">Example 2</a>
+						<a href="video/example3.mp4">Example 2</a>
+				</video>
+			</div>
+		</div>
+
+		<div class='section'>
+				<H2><script>secNo()</script>Rotation Estimation Network (Sec. 2 in the paper)</H2>
+			<p>
+			To generate our training dataset, we used the World Cities dataset <script>cite('worldcities')</script>, which consists of 2M images of various scenes taken in 40 cities.
+			We randomly sampled 300K images from the dataset, and manually removed slanted images and other disturbing images such as logos and objects
+			captured in unusual directions.
+			We finally obtained 110K images for our training set.
+			We assumed that all images in the training set are upright, i.e., their rotation angles are zero.
+			The final training set consists of not only images of man-made structures, but also pictures with no obvious straight lines such as
+			portrait pictures, and images of curved objects.
+			The proportion of such images in our training set is about a half.
+			We also sampled 500 images that look upright from the World Cities dataset for our validation set.
+			Among 500 images, 100 images do not have straight horizontal or vertical lines such as boundaries of buildings.
+			</p>
+
+			<p>
+			For training the network, we randomly rotated images as described in our paper.
+			Then, the largest square-shaped region at the center of each rotated image is cropped.
+			The cropped region was resized to 224 &times; 224, which is the input size of the VGG-19 network.
+			We then trained the network to predict the random rotation angles used for rotating the input images.
+			</p>
+
+			<p>
+			We fine-tuned a pre-trained VGG-19 network.
+			Specifically, we initialized all the parameters in the network with pre-trained prameters except for the last fully-connected layer,
+			which was randomly initialized.
+			During the first epoch, we used Adam optimizer <script>cite('adam')</script> with a learning rate of 1.0&times;10<sup>-4</sup>.
+			From the second epoch, we used stochastic gradient descent and set the learning rate to 2.0&times;10<sup>-3</sup>.
+			We decreased the learning rate by 0.1 times for every 55K iterations until it reached at 2.0&times;10<sup>-6</sup>.
+			</p>
+		</div>
+
+		<div class='section'>
+			<H2><script>secNo()</script> Error Model (Fig. 4 in the paper)</H2>
+			<div style='text-align:center'>
+				<img src="imgs/error_model.jpg" width='95%'><br>
+				<script>addFig('error_model')</script> Comparison of different angle estimation.
+			</div>
+			<p>
+			<script>fig('error_model')</script> demonstates the effect of our error model.
+			The video frames in the figure correspond to the results at 00:09 in the video below.
+			For better visualization, horizontal lines (yellow dotted) are placed.
+			While both results of 'initial angles' and 'without error model' are still slanted because of incorrectly estimated rotation angles,
+			our result is perfectly fixed.
+			</p>
+			<p>
+			Below are two video clips obtained without and with stabilization.
+			</p>
+			<div class='video'>
+				<button onclick='changeVideo("video_error_model","video/error_model_without_stabilization.mp4")'>Without stabilization</button>
+				<button onclick='changeVideo("video_error_model","video/error_model_with_stabilization.mp4")'>With stabilization (our joint approach)</button>
+				<br><br>
+				<video id="video_error_model" width="1280" height="720" controls>
+					<source src="video/error_model_without_stabilization.mp4" type="video/mp4">
+						<a href="video/error_model_without_stabilization.mp4">Without stabilization</a>
+						<a href="video/error_model_with_stabilization.mp4">With stabilization</a>
+				</video>
+			</div>
+
+		</div>
+
+		<div class='section'>
+			<H2><script>secNo()</script> Reflecting Relative Rotation</H2>
+			<div style='text-align:center'>
+				<img src="imgs/relative_rotation.jpg" width='95%'><br>
+				<script>addFig('relative_rotation')</script> Comparison between the simple prior with different lambda values and our temporal consistency prior.
+			</div>
+			<p>
+			To produce temporally smooth angles, we may simply define <i>&rho;</i> in Eq. (3) in the paper as follows:
+			</p>
+			<p style='text-align:center'>
+			<i>&rho;(&theta;<sub>t</sub>,&theta;<sub>t+1</sub>)=|&theta;<sub>t+1</sub>-&theta;<sub>t</sub>|<sup>2</sup></i>,
+			</p>
+			<p>
+			assuming that there are no or very small rotational motion between consecutive frames.
+			However, the equation above ignores rotational motion that may exist between consecutive frames, and consequently, leads to inaccurate results.
+			<script>fig('relative_rotation')</script> compares our temporal consistency prior that reflects the relative rotation between consecutive frames with the simple prior defined above.
+			The result images in <script>fig('relative_rotation')</script> are obtained using our joint upright adjustment and stabilization with different priors.
+			Regardless of lambda, the simple prior cannot accurately estimate rotation angles, so it produces more slanted results than ours.
+			</p>
+			<p>
+				Below are two video clips obtained without and with stabilization.
+			</p>
+			<div class='video'>
+				<button onclick='changeVideo("video_relative_rotation","video/relative_rotation_without_stabilization.mp4")'>Without stabilization</button>
+				<button onclick='changeVideo("video_relative_rotation","video/relative_rotation_with_stabilization.mp4")'>With stabilization (our joint approach)</button>
+				<br><br>
+				<video id="video_relative_rotation" width="1280" height="720" controls>
+					<source src="video/relative_rotation_without_stabilization.mp4" type="video/mp4">
+						<a href="video/relative_rotation_without_stabilization.mp4">Without stabilization</a>
+						<a href="video/relative_rotation_with_stabilization.mp4">With stabilization</a>
+				</video>
+			</div>
+		</div>
+
+		<div class='section'>
+			<H2><script>secNo()</script> Upright Adjustment for Visual Recognition</H2>
+			<div style='text-align:center'>
+			<table style='margin-left: auto; margin-right:auto'>
+					<tr><td>Original</td><td>Rotated</td><td>Upright-adjusted</td></tr>
+					<tr><td>0.5302</td><td>0.3448</td><td>0.5238</td></tr>
+			</table>
+			<script>addTab('object_detection')</script> Object detection performance on the ImageNet VID validation dataset <script>cite('imagenet')</script> in terms of mean average precision at Intersection-over-Union threshold of 0.5.
+			</div>
+			<p>
+			An interesting application of our method is to pre-process video data before visual recognition tasks such as object detection,
+			the performance of which can be largely degraded for slanted contents.
+			To examine the effect of upright adjustment on video object detection,
+			we randomly sampled three video clips from the validation set of the ImageNet VID Challenge 2015 dataset <script>cite('imagenet')</script>, and rotated them.
+			To generate rotated video clips, we randomly sampled one per 150 frames on average, and randomly set their rotation angles by up to 40 degrees.
+			For the other frames, we linearly inporlated the rotation angles.
+			We did not crop invalid frame boundaries, but extended the frames so that the entire contents can be preserved.
+			We ran a state-of-the-art video object detection method <script>cite('objectdetection')</script> on the rotated video clips and measured its performance.
+			We also applied our video upright adjustment method to the rotated videos, and measured the performance of the object detection method on them.
+			To measure the performance, we rotated the ground truth bounding boxes according to the rotation angles of video frames, and computed the Intersection-over-Union between the rotated ground truth and detected bounding boxes.
+			<script>tab('object_detection')</script> shows, while camera rotation severely degrades the performance of object detection, our method can successfully recover the original performance.
+			</p>
+			<p>
+			The video below shows a comparison of object detection on rotated and upright-adjusted video clips.
+			</p>
+			<div class='video'>
+				<video width="1280" height="720" controls>
+					<source src="video/object_detection.mp4" type="video/mp4">
+						<a href="video/object_detection.mp4">Video</a>
+				</video>
+			</div>
+			<p>
+			<script>fig('object_detection')</script> shows object detection results at 00:00 and 00:09 in the video above.
+			</p>
+			<div style='text-align:center'>
+			<table style='border:0pt; margin-left:auto; margin-right:auto; text-align:center'>
+				<tr><td style='border:0pt'>
+			<img src="imgs/detection1.jpg" width='99%'>
+				</td><td style='border:0pt'>
+			<img src="imgs/detection2.jpg" width='99%'>
+				</td></tr>
+			</table>
+			<script>addFig('object_detection')</script> Comparison of object detection on rotated and upright-adjusted video clips.
+			</div>
+		</div>
+
+
+		<div class='section'>
+			<H2><script>secNo()</script> Joint Upright Adjustment and Stabilization (Fig. 5 in the paper)</H2>
+			<div style='text-align:center'>
+				<img src="imgs/joint_stab.jpg" width='95%'><br>
+				<script>addFig('video_stabilization')</script> Comparison among video stabilization <script>cite('bundled')</script>, video stabilization after upright adjustment, and our joint upright adjustment and stabilization.
+			</div>
+			<p>
+			<script>fig('video_stabilization')</script> shows a comparison among results of video stabilization <script>cite('bundled')</script>, video stabilization after upright adjustment, and our joint approach.
+			While video stabilization without upright adjustment achieves the minimum loss of spatial resolution, its result shows slanted contents.
+			The result of video stabilization after upright adjustment has upright contents, but it also shows severe loss of spatial resolution.
+			On the other hand, the result of our joint approach shows upright contents with smaller loss of spatial resolution.
+			</p>
+			<p>
+			Below is a video that shows the comparison above.
+			</p>
+			<div class='video'>
+				<video width="1280" height="720" controls>
+					<source src="video/joint_stab_upright.mp4" type="video/mp4">
+						<a href="video/joint_stab_upright.mp4">Video</a>
+				</video>
+			</div>
+		</div>
+
+		<div class='section'>
+			<H2><script>secNo()</script> Joint Upright Adjustment and Stabilization using Initial and Final Angles (Fig. 6 in the paper)</H2>
+			<div style='text-align:center'>
+				<img src="imgs/stab_initial.jpg" width='95%'><br>
+				<script>addFig('stab_initial')</script> Joint upright adjustment and stabilization using our initial and final angles.
+			</div>
+			<p>
+			<script>fig('stab_initial')</script> shows a comparison between joint upright adjustment and stabilization using initial and final angles.
+			As initial angles sometimes have large error, stabilization using initial angles may still produce a slanted video as shown in the figure.
+			Furthermore, large error in initial angles may introduce false shaky camera motion, which degrades the performance of video stabilization.
+			On the other hand, our method using final angles produces a stable and upright video more reliably.
+			</p>
+
+			<p>
+			Below is a video corresponding to <script>fig('stab_initial')</script>.
+			</p>
+			<div class='video'>
+				<video width="1280" height="720" controls>
+					<source src="video/stab_initial_vs_final.mp4" type="video/mp4">
+						<a href="video/stab_initial_vs_final.mp4">Video</a>
+				</video>
+			</div>
+		</div>
+
+		<div class='section'>
+			<H2><script>secNo()</script> Videos without Straight Lines</H2>
+			<div style='text-align:center'>
+				<img src="imgs/no_straight_lines.jpg" width='95%'><br>
+				<script>addFig('no_straight_lines')</script> Upright adjustment of a video without straight lines
+			</div>
+			<p>
+			As our method uses a convolutional neural network for initial angle estimation, our method is able to handle videos with no obvious straight lines.
+			<script>fig('no_straight_lines')</script> shows such an example, which corresponds to Test 3 (0:39-1:03) of our user study below.
+			The example shows a park with lots of plants and trees, so it has no obvious horizontal or vertical lines.
+			Even in such a case, our method can successfully correct slanted video contents.
+			</p>
+		</div>
+
+		<div class='section'>
+			<H2><script>secNo()</script> User Study</H2>
+			<p>
+			For our user study, we collected 10 video clips of slanted and shaky contents.
+			For each video, we applied upright adjustment, video stabilization [3], and joint upright adjustment and video stabilization.
+			Finally, we obtained 20 pairs of video clips.
+			Among them, 10 pairs are of input video clips and their corresponding upright adjustment results, and the other 10 pairs are of video stabilization, and our joint upright adjustment and video stabilization results.
+			The video below shows all video clips used in our user study.
+			</p>
+			<div class='video'>
+				<video width="1280" height="720" controls>
+					<source src="video/user_study.mp4" type="video/mp4">
+						<a href="video/user_study.mp4">Video</a>
+				</video>
+			</div>
+
+			<p>
+			<script>tab('user_study')</script> and <script>tab('user_study2')</script> show the user study results on the input video clips and their corresponding upright adjustment results, and on the results of video stabilization and our joint approach.
+			In each table cell, '1' indicates that the participant preferred our result, which is either an upright adjustment or joint upright adjustment and stabilization result.
+			Both tables show that our approach consistently improves the perceptual quality of video clips in both scenarios.
+			</p>
+
+			<div style='text-align:center'>
+			<table style='margin-left: auto; margin-right:auto'>
+				<tr><td colspan=2 rowspan=2></td><td colspan=20>Participants</td><td colspan=2></td></tr>
+				<tr><td>A1</td><td>A2</td><td>A3</td><td>A4</td><td>A5</td><td>A6</td><td>A7</td><td>A8</td><td>A9</td><td>A10</td><td>A11</td><td>A12</td><td>A13</td><td>A14</td><td>A15</td><td>A16</td><td>A17</td><td>A18</td><td>A19</td><td>A20</td><td>SUM</td><td>AVR</td></tr>
+				<tr><td rowspan=10>Video No.</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>8</td><td>0.4</td></tr>
+				<tr><td>2</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>18</td><td>0.9</td></tr>
+				<tr><td>3</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>17</td><td>0.85</td></tr>
+				<tr><td>4</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>18</td><td>0.9</td></tr>
+				<tr><td>5</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>17</td><td>0.85</td></tr>
+				<tr><td>6</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>14</td><td>0.7</td></tr>
+				<tr><td>7</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>17</td><td>0.85</td></tr>
+				<tr><td>8</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td><td>13</td><td>0.65</td></tr>
+				<tr><td>9</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>17</td><td>0.85</td></tr>
+				<tr><td>10</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>17</td><td>0.85</td></tr>
+				<tr><td rowspan=2></td><td>SUM</td><td>8</td><td>9</td><td>7</td><td>8</td><td>10</td><td>9</td><td>4</td><td>8</td><td>9</td><td>8</td><td>9</td><td>8</td><td>2</td><td>7</td><td>9</td><td>9</td><td>7</td><td>8</td><td>7</td><td>10</td></tr>
+				<tr><td>AVR</td><td>0.8</td><td>0.9</td><td>0.7</td><td>0.8</td><td>1</td><td>0.9</td><td>0.4</td><td>0.8</td><td>0.9</td><td>0.8</td><td>0.9</td><td>0.8</td><td>0.2</td><td>0.7</td><td>0.9</td><td>0.9</td><td>0.7</td><td>0.8</td><td>0.7</td><td>1</td></tr>
+			</table>
+			<script>addTab('user_study')</script> User study result on input video clips and their corresponding upright adjustment results.
+			<br>
+			<br>
+
+			<table style='margin-left: auto; margin-right:auto'>
+				<tr><td colspan=2 rowspan=2></td><td colspan=20>Participants</td><td colspan=2></td></tr>
+				<tr><td>A1</td><td>A2</td><td>A3</td><td>A4</td><td>A5</td><td>A6</td><td>A7</td><td>A8</td><td>A9</td><td>A10</td><td>A11</td><td>A12</td><td>A13</td><td>A14</td><td>A15</td><td>A16</td><td>A17</td><td>A18</td><td>A19</td><td>A20</td><td>SUM</td><td>AVR</td></tr>
+				<tr><td rowspan=10>Video No.</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>10</td><td>0.5</td></tr>
+				<tr><td>2</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>18</td><td>0.9</td></tr>
+				<tr><td>3</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>17</td><td>0.85</td></tr>
+				<tr><td>4</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>19</td><td>0.95</td></tr>
+				<tr><td>5</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>17</td><td>0.85</td></tr>
+				<tr><td>6</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>19</td><td>0.95</td></tr>
+				<tr><td>7</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>19</td><td>0.95</td></tr>
+				<tr><td>8</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>16</td><td>0.8</td></tr>
+				<tr><td>9</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>17</td><td>0.85</td></tr>
+				<tr><td>10</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>13</td><td>0.65</td></tr>
+				<tr><td rowspan=2></td><td>SUM</td><td>10</td><td>10</td><td>8</td><td>10</td><td>8</td><td>10</td><td>5</td><td>8</td><td>10</td><td>9</td><td>9</td><td>8</td><td>2</td><td>9</td><td>9</td><td>10</td><td>6</td><td>8</td><td>8</td><td>8</td></tr>
+				<tr><td>AVR</td><td>1</td><td>1</td><td>0.8</td><td>1</td><td>0.8</td><td>1</td><td>0.5</td><td>0.8</td><td>1</td><td>0.9</td><td>0.9</td><td>0.8</td><td>0.2</td><td>0.9</td><td>0.9</td><td>1</td><td>0.6</td><td>0.8</td><td>0.8</td><td>0.8</td></tr>
+			</table>
+			<script>addTab('user_study2')</script> User study result on video stabilization and our joint approach.
+			</div>
+		</div>
+
+		<div class='section'>
+			<H2><script>secNo()</script> Sparse Estimation of Rotation Angles</H2>
+			<div style='text-align:center'>
+			<img src="imgs/sparse_sampling.jpg"><br>
+			<script>addFig('sparse')</script> Average errors of estimated rotataion angles with respect to different sampling rates.
+			</div>
+
+			<p>
+			As we use relative rotation in our method, one correct angle estimate from the rotation estimation network might be enough for upright adjustment for an entire video.
+			Similarly, we may sample only a few frames, e.g., 1 per 10 frames, and use the estimates of their rotation angles instead of using the initial estimates of all frames.
+			However, even the best initial angle with the lowest variance may still have error.
+			Considering error, the best way to estimate accurate final angles is to use all initial angles.
+			<script>fig('sparse')</script> shows that average error increases as the sampling rate decreases.
+			</p>
+		</div>
+
+		<script>listRef();</script>
+
+	</body>
+</html>
